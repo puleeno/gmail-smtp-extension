@@ -1,2 +1,256 @@
-# gmail-smtp-extension
-Gửi email WordPress qua Gmail SMTP (App Password) thay cho hàm mail() mặc định của hosting
+# Gmail SMTP — Hướng dẫn cài đặt và sử dụng
+
+Extension này thay thế hàm `mail()` mặc định của hosting bằng cách gửi thư qua **Gmail SMTP**.
+Áp dụng cho **toàn bộ** email của WordPress, không riêng một tính năng.
+
+---
+
+## 1. Vấn đề cần giải quyết
+
+Nhiều hosting Việt Nam không cấu hình dịch vụ gửi mail, nên WordPress mặc định dùng hàm `mail()` của PHP sẽ:
+
+- Báo thành công nhưng email không tới (`wp_mail()` trả về `true`, email bị bỏ rơi).
+- Bị mã hoá sai tiếng Việt hoặc lỗi charset khi tiếng Việt có dấu.
+- Rơi vào thư mục spam vì không có bản ghi SPF/DKIM hợp lệ.
+
+Extension giải quyết cả ba bằng cách nối trực tiếp tới Gmail qua kênh mã hoá TLS.
+
+## 2. Extension hoạt động như thế nào
+
+```
+Email phát sinh  →  wp_mail()  →  PHPMailer  →  phpmailer_init  →  Gmail SMTP  →  Người nhận
+                     (WordPress)                    (extension này)
+```
+
+Vì can thiệp ở hook `phpmailer_init`, **mọi** thành phần gọi `wp_mail()` đều tự động dùng Gmail:
+
+| Thành phần | Nguồn email |
+|---|---|
+| `notification-system` | Kênh `EmailChannel` — thông báo trong site |
+| `my-account` | Mã xác minh đăng ký / đặt lại mật khẩu |
+| `tour-builder` | Xác nhận đặt tour, đơn hàng |
+| `base-ecommerce` | Đơn hàng, thanh toán, email marketing |
+| WordPress core | Đăng ký người dùng mới, đặt lại mật khẩu, bình luận |
+| WooCommerce (nếu có) | Xác nhận đơn, hóa đơn, nhắc thanh toán |
+
+Không cần sửa code của các extension khác.
+
+## 3. Điều kiện trước khi bắt đầu
+
+- [ ] Website đang chạy WordPress và extension `gmail-smtp` đã được bật trong trang quản trị theme.
+- [ ] Bạn có một tài khoản Gmail dùng riêng cho website (khuyến nghị), ví dụ `nobitour.vn@gmail.com`.
+- [ ] Tài khoản Gmail đã bật Xác minh 2 bước.
+- [ ] Hosting cho phép kết nối ra ngoài qua cổng `587` hoặc `465`. Nếu nhà cung cấp chặn toàn bộ SMTP outbound thì extension này cũng không cứu được — phải đổi hosting hoặc dùng dịch vụ gửi mail chuyên dụng.
+
+> **Lưu ý về tài khoản Google Workspace (Google Apps):** Google chặn App Password trên Workspace do công ty quản lý.
+> Khi đó cần bật **2SV** hoặc dùng OAuth2, hoặc nhờ quản trị viên cho phép App Password.
+
+---
+
+## 4. Bước 1 — Bật Xác minh 2 bước
+
+1. Truy cập <https://myaccount.google.com/security>.
+2. Chọn **Bảo mật** (Security).
+3. Ở mục **Đăng nhập vào Google (Sign-in)**, chọn **Xác minh 2 bước** → **Bật**.
+4. Xác nhận bằng mã gửi về điện thoại.
+
+## 5. Bước 2 — Tạo Mật khẩu ứng dụng (App Password)
+
+Gmail **không** cho phép dùng mật khẩu tài khoản để gửi thư qua SMTP. Thay vào đó phải dùng App Password.
+
+1. Truy cập <https://myaccount.google.com/apppasswords>.
+2. Chọn một thiết bị, ví dụ: `Nobitour Website`.
+3. Chọn quyền: **Mail (Gửi email)**.
+4. Bấm **Tạo**.
+5. Google hiển thị một chuỗi **16 ký tự**, ví dụ `abcd efgh ijkl mnop`.
+6. **Bấm "Xong"** và sao chép ngay chuỗi này — Google chỉ hiển thị đúng một lần.
+
+Quy tắc khi dùng App Password:
+
+- Xóa toàn bộ khoảng trắng: `abcd efgh ijkl mnop` → `abcdefghijklmnop`.
+- App Password **không hết hạn theo thời gian**, nhưng bạn có thể thu hồi bất cứ lúc nào.
+- Bảo mật giống mật khẩu tài khoản: không ghi vào tài liệu, không gửi qua chat/Zalo, không commit vào Git.
+
+## 6. Bước 3 — Nhập cấu hình trong trang quản trị
+
+Vào **Jankx Dashboard → Gmail SMTP** (URL: `wp-admin/admin.php?page=jankx-gmail-smtp`).
+
+| Trường | Giá trị gợi ý | Giải thích |
+|---|---|---|
+| Bật Gmail SMTP | ✅ Tích | Tắt thì WordPress dùng mail() của hosting |
+| Host | `smtp.gmail.com` | Cố định với Gmail |
+| Port | `587` | Hoặc `465`. Xem bảng bên dưới |
+| Mã hoá | `TLS (STARTTLS)` | Khớp với port 587 |
+| Timeout | `30` | Giây chờ kết nối |
+| Tài khoản | `nobitour.vn@gmail.com` | Địa chỉ Gmail đầy đủ |
+| Mật khẩu ứng dụng | 16 ký tự vừa tạo | Để trống nếu không muốn đổi mật khẩu đã lưu |
+| Xác thực SMTP | ✅ Tích | Gmail luôn bắt buộc |
+| Email gửi đi | `nobitour.vn@gmail.com` | Nên trùng với tài khoản xác thực |
+| Tên hiển thị | `Nobitour` | Không bắt buộc, mặc định lấy tên site |
+| Ghi đè From | ✅ Tích | Bảo đảm mọi email dùng địa chỉ trên |
+| Ghi log SMTP | ❌ Tắt | Chỉ bật khi đang lỗi, xem mục 9 |
+
+### Chọn port nào?
+
+| Port | Mã hoá | Khi nào dùng |
+|---|---|---|
+| `587` | `TLS (STARTTLS)` | **Khuyên dùng.** Hoạt động trên hầu hết hosting, kể cả hosting có tường lửa giới hạn |
+| `465` | `SSL/TLS ngầm định` | Dùng nếu port 587 bị chặn. Nhiều hosting cũ chặn 465 |
+
+Sau khi điền xong bấm **Lưu cấu hình**.
+
+## 7. Bước 4 — Gửi email kiểm thử
+
+1. Cuộn xuống mục **Gửi email kiểm thử**.
+2. Nhập địa chỉ nhận thư (có thể là chính tài khoản Gmail của bạn).
+3. Bấm **Gửi email thử**.
+   - ✅ Thông báo xanh `Đã gửi email kiểm thử tới ...` → SMTP đã kết nối được.
+   - ❌ Thông báo đỏ kèm lỗi cụ thể → xem mục **Khắc phục sự cố**.
+4. Kiểm tra cả **Inbox**, **Spam** và **Promotions** (Gmail đôi khi xếp email tự động vào tab khác).
+5. Thử lại một luồng thật của website, ví dụ đăng ký tài khoản mới để nhận mã xác minh.
+
+## 8. Quy tắc bắt buộc của Gmail về địa chỉ gửi
+
+Gmail chỉ cho phép gửi email khi địa chỉ `From` **trùng với tài khoản đã xác thực**.
+
+- Muốn gửi từ `support@nibitour.vn`? Phải cấu hình **Gửi email dưới tên (Send mail as)** trong Gmail:
+  <https://mail.google.com/mail/u/0/#settings/sendmail>
+  → thêm địa chỉ, nhận mã xác minh, thêm vào danh sách bí danh, chọn làm mặc định.
+- Nếu không làm bước này, hãy để **Email gửi đi** trùng với **Tài khoản**.
+- Khi bật **Ghi đè From**, extension sẽ ép mọi email dùng địa chỉ đã cấu hình — đúng những gì Gmail yêu cầu.
+
+## 9. Ghi log SMTP để chẩn đoán
+
+Bật **Ghi log SMTP** rồi gửi email thử, sau đó mở log lỗi PHP:
+
+- XAMPP / Laragon: `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php_errors.log`
+- Hosting cPanel: `/home/<user>/public_html/php_errors.log` hoặc **Errors** trong cPanel → *PHP Errors and Warnings*
+- Hosting DirectAdmin/SaaS: trang **Logs** trong panel quản trị
+
+Sau khi tìm ra nguyên nhân, **nhớ tắt lại Ghi log SMTP** vì log có thể chứa địa chỉ người nhận.
+
+## 10. Hạn mức và chống spam
+
+| Loại tài khoản | Hạn mức gửi/ngày |
+|---|---|
+| Gmail cá nhân | khoảng **500** email |
+| Google Workspace | **2.000** email |
+
+Ngoài hạn mức, Gmail có thể đánh dấu email hàng loạt là spam. Nếu site gửi email marketing hàng nghìn tin mỗi lần, hãy dùng dịch vụ chuyên dụng (Mailchimp, Brevo, Amazon SES...) thay vì Gmail.
+
+## 11. Cấu hình DNS để email không rơi vào spam (SPF / DKIM / DMARC)
+
+Chỉ cần làm khi bạn gửi email **bằng địa chỉ của tên miền riêng** (ví dụ `support@nibitour.vn`) qua Google Workspace.
+
+### SPF — cho phép Google gửi thay tên miền
+
+Thêm bản ghi TXT tại zone DNS:
+
+```
+v=spf1 include:_spf.google.com ~all
+```
+
+### DKIM — ký email
+
+Trong [Google Admin Console](https://admin.google.com) → *Apps* → *Gmail* → *Authenticate email*, bật **DKIM** rồi thêm bản ghi TXT mà Google cung cấp (thường có selector `_google`).
+
+### DMARC — báo cáo và siết chặt
+
+```
+v=DMARC1; p=none; rua=mailto:dmarc@nibitour.vn
+```
+
+Sau khi đã đúng, đổi `p=none` thành `p=quarantine` rồi `p=reject`.
+
+> Nếu bạn dùng **tài khoản Gmail cá nhân** và gửi bằng chính địa chỉ `@gmail.com`, bước này không áp dụng — email sẵn sàng có DKIM của Google.
+
+## 12. Khắc phục sự cố
+
+| Thông báo lỗi | Nguyên nhân | Cách sửa |
+|---|---|---|
+| `Failed to authenticate` / `535-5.7.8 Username and Password not accepted` | Sai App Password hoặc mật khẩu ứng dụng bị thu hồi | Tạo lại App Password, dán đúng 16 ký tự đã bỏ khoảng trắng |
+| `535-5.7.8 ... from address not authorized` | Địa chỉ gửi không trùng tài khoản xác thực | Sửa **Email gửi đi** hoặc cấu hình *Gửi email dưới tên* (mục 8) |
+| `Connection timed out` / `Failed to connect to smtp.gmail.com port 587` | Hosting chặn cổng 587 | Đổi port `465` + mã hoá `SSL/TLS ngầm định` |
+| `SSL operation failed` / `wrong version number` | Đang dùng SSL ngầm định ở port 587 | Đặt port `587` + mã hoá `TLS (STARTTLS)`, hoặc ngược lại |
+| `Access denied. Please visit https://support.google.com/accounts/answer/6010255` | Tài khoản không bật xác minh 2 bước hoặc bị Google chặn SMTP | Bật 2SV, kiểm tra thêm: `https://accounts.google.com/b/0/DisplaySMTPStatus` |
+| Email vào Spam | Chưa có SPF/DKIM/DMARC, hoặc gửi quá nhiều trong thời gian ngắn | Làm mục 11, giảm tần suất gửi |
+| `wp_mail()` trả về `false` nhưng không có thông báo | Bị chặn bởi plugin khác hoặc hosting | Tắt tạm các plugin gửi mail khác, xem error log |
+| Không có lỗi nhưng email không tới | Hosting chặn hoàn toàn SMTP outbound | Liên hệ nhà cung cầp hosting mở cổng 587/465 |
+
+### Tự kiểm tra kết nối SMTP không cần WordPress
+
+Chạy lệnh sau trong terminal hosting (đổi thông tin tương ứng):
+
+```bash
+openssl s_client -starttls smtp -connect smtp.gmail.com:587 -crlf -quiet
+```
+
+Nếu nhận được `220 smtp.gmail.com` → kết nối được, vấn đề nằm ở cấu hình WordPress.
+Nếu báo `Connection refused` hoặc treo → hosting đang chặn cổng này.
+
+## 13. Bảo mật
+
+- App Password được lưu trong bảng `wp_options` của WordPress. Hãy chắc chắn:
+  - Chỉ tài khoản vai trò **Quản trị viên (Administrator)** được vào trang này (extension dùng quyền `manage_options`).
+  - `wp-config.php` không bị truy cập công khai.
+  - Sao lưu database được lưu ở nơi an toàn.
+- Trang cài đặt **không bao giờ hiển thị lại** App Password — trường đó luôn hiển thị trống sau khi tải trang. Để trống khi lưu nghĩa là giữ nguyên mật khẩu cũ.
+- Muốn đổi App Password: vào <https://myaccount.google.com/apppasswords> xoá mật khẩu cũ, tạo mật khẩu mới, rồi lưu lại trong trang cài đặt.
+- Tắt **Ghi log SMTP** sau khi sửa xong lỗi.
+- Không ghi App Password vào kho mã nguồn, file log, hoặc tin nhắn chat.
+
+## 14. Tắt Gmail SMTP
+
+Bỏ dấu **Bật Gmail SMTP** rồi lưu. Website quay về dùng mail mặc định của hosting. Toàn bộ cấu hình (kể cả App Password) được giữ nguyên, bật lại chỉ cần tích lại.
+
+## 15. Dành cho lập trình viên
+
+Bộ lọc để tùy biến hoặc đặt cấu hình qua code (ví dụ trong `wp-config.php` hoặc `functions.php` của child theme):
+
+```php
+// Thay đổi giá trị của một trường
+add_filter('jankx/gmail_smtp/config', function ($value, $key) {
+    if ($key === 'from_name') {
+        return 'Nobitour Booking';
+    }
+    return $value;
+}, 10, 2);
+
+// Chặn gửi mail trong môi trường local/staging
+add_filter('jankx/gmail_smtp/config', function ($value, $key) {
+    if ($key === 'enabled' && (defined('WP_DEBUG') && WP_DEBUG)) {
+        return 0;
+    }
+    return $value;
+}, 10, 2);
+```
+
+Action phát ra sau khi PHPMailer đã được cấu hình xong:
+
+```php
+add_action('jankx/gmail_smtp/configured', function ($phpmailer, $config) {
+    // $phpmailer là đối tượng PHPMailer\PHPMailer\PHPMailer
+}, 10, 2);
+```
+
+Các tên option trong database đều có tiền tố `jankx_gmail_smtp_`:
+`jankx_gmail_smtp_enabled`, `jankx_gmail_smtp_host`, `jankx_gmail_smtp_port`,
+`jankx_gmail_smtp_encryption`, `jankx_gmail_smtp_auth`, `jankx_gmail_smtp_username`,
+`jankx_gmail_smtp_password`, `jankx_gmail_smtp_from_email`, `jankx_gmail_smtp_from_name`,
+`jankx_gmail_smtp_force_from`, `jankx_gmail_smtp_debug`, `jankx_gmail_smtp_timeout`.
+
+---
+
+## Cấu trúc thư mục
+
+```
+gmail-smtp/
+├── manifest.json              Khai báo extension cho theme framework
+├── GmailSmtpExtension.php     Lớp khởi tạo + autoloader
+├── README.md                  Tài liệu này
+└── src/
+    ├── SmtpConfig.php         Đọc/ghi và kiểm tra cấu hình
+    ├── SmtpMailer.php         Cấu hình PHPMailer qua hook phpmailer_init
+    └── Admin/
+        └── SettingsPage.php   Trang cài đặt trong wp-admin
+```
