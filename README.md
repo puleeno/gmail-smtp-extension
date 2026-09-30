@@ -103,13 +103,16 @@ Sau khi điền xong bấm **Lưu cấu hình**.
 
 ## 7. Bước 4 — Gửi email kiểm thử
 
-1. Cuộn xuống mục **Gửi email kiểm thử**.
-2. Nhập địa chỉ nhận thư (có thể là chính tài khoản Gmail của bạn).
+1. Cuộn xuống mục **Gửi email kiểm thử.
+2. Kiểm tra địa chỉ hiển thị ở dòng **Gửi đến** — đây là email của tài khoản bạn đang đăng nhập WordPress.
 3. Bấm **Gửi email thử**.
    - ✅ Thông báo xanh `Đã gửi email kiểm thử tới ...` → SMTP đã kết nối được.
    - ❌ Thông báo đỏ kèm lỗi cụ thể → xem mục **Khắc phục sự cố**.
-4. Kiểm tra cả **Inbox**, **Spam** và **Promotions** (Gmail đôi khi xếp email tự động vào tab khác).
+4. Mở hộp thư của chính bạn, kiểm tra cả **Inbox**, **Spam** và **Promotions** (Gmail đôi khi xếp email tự động vào tab khác).
 5. Thử lại một luồng thật của website, ví dụ đăng ký tài khoản mới để nhận mã xác minh.
+
+> Email kiểm thử **luôn gửi tới email của user đang đăng nhập** và không cho sửa. Nhờ vậy bạn vừa xác nhận được
+> SMTP hoạt động, vừa kiểm tra được email của chính admin có nhận thư bình thường hay không.
 
 ## 8. Quy tắc bắt buộc của Gmail về địa chỉ gửi
 

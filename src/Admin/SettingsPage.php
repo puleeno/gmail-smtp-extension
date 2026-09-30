@@ -9,7 +9,6 @@ class SettingsPage
     const PAGE_SLUG = 'jankx-gmail-smtp';
     const OPTION_GROUP = 'jankx_gmail_smtp_settings';
     const TEST_NONCE = 'jankx_gmail_smtp_test';
-    const TEST_FIELD = 'jankx_gmail_smtp_test_email';
 
     private SmtpConfig $config;
 
@@ -418,16 +417,15 @@ class SettingsPage
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="<?php echo esc_attr(self::TEST_FIELD); ?>"><?php esc_html_e('Gửi đến', 'jankx'); ?></label>
+                            <?php esc_html_e('Gửi đến', 'jankx'); ?>
                         </th>
                         <td>
-                            <input type="email"
-                                   id="<?php echo esc_attr(self::TEST_FIELD); ?>"
-                                   name="<?php echo esc_attr(self::TEST_FIELD); ?>"
-                                   value="<?php echo esc_attr($this->config->get(SmtpConfig::USERNAME)); ?>"
-                                   class="regular-text"
-                                   required>
-                            <p class="description"><?php esc_html_e('Nhập email nhận thư, không bắt buộc trùng tài khoản gửi.', 'jankx'); ?></p>
+                            <p>
+                                <code><?php echo esc_html($this->currentUserEmail()); ?></code>
+                            </p>
+                            <p class="description">
+                                <?php esc_html_e('Email kiểm thử luôn được gửi tới địa chỉ của tài khoản đang đăng nhập.', 'jankx'); ?>
+                            </p>
                         </td>
                     </tr>
                 </table>
@@ -435,6 +433,17 @@ class SettingsPage
             </form>
         </div>
         <?php
+    }
+
+    private function currentUserEmail(): string
+    {
+        $user = wp_get_current_user();
+
+        if (!$user || !$user->exists()) {
+            return '';
+        }
+
+        return (string) $user->user_email;
     }
 
     private function handleTestEmail(): ?array
@@ -449,14 +458,12 @@ class SettingsPage
 
         check_admin_referer(self::TEST_NONCE);
 
-        $to = isset($_POST[self::TEST_FIELD])
-            ? sanitize_email(wp_unslash($_POST[self::TEST_FIELD]))
-            : '';
+        $to = sanitize_email($this->currentUserEmail());
 
         if (!is_email($to)) {
             return [
                 'success' => false,
-                'message' => __('Địa chỉ email nhận không hợp lệ.', 'jankx'),
+                'message' => __('Không xác định được email của tài khoản đang đăng nhập. Hãy kiểm tra lại trang Hồ sơ người dùng.', 'jankx'),
             ];
         }
 
