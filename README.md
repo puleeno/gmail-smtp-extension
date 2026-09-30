@@ -103,7 +103,7 @@ Sau khi điền xong bấm **Lưu cấu hình**.
 
 ## 7. Bước 4 — Gửi email kiểm thử
 
-1. Cuộn xuống mục **Gửi email kiểm thử.
+1. Cuộn xuống mục **Gửi email kiểm thử**.
 2. Kiểm tra địa chỉ hiển thị ở dòng **Gửi đến** — đây là email của tài khoản bạn đang đăng nhập WordPress.
 3. Bấm **Gửi email thử**.
    - ✅ Thông báo xanh `Đã gửi email kiểm thử tới ...` → SMTP đã kết nối được.
