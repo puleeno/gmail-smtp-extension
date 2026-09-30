@@ -152,6 +152,24 @@ class SettingsPage
                 </div>
             <?php endif; ?>
 
+            <?php if ($this->config->hasCredentials() && !$this->config->isPersonalGmail()): ?>
+                <div class="notice notice-warning inline">
+                    <p>
+                        <strong><?php esc_html_e('Tài khoản không phải Gmail cá nhân.', 'jankx'); ?></strong>
+                        <?php esc_html_e('Gmail chỉ cấp Mật khẩu ứng dụng cho tài khoản @gmail.com. Tài khoản do công ty quản lý (Google Workspace) sẽ không tạo được App Password và Gmail thường chặn địa chỉ gửi không thuộc tài khoản đó.', 'jankx'); ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($this->config->isPersonalGmail() && !$this->config->isFromAuthorized()): ?>
+                <div class="notice notice-warning inline">
+                    <p>
+                        <strong><?php esc_html_e('Địa chỉ gửi đi không khớp tài khoản.', 'jankx'); ?></strong>
+                        <?php esc_html_e('Gmail cá nhân chỉ cho gửi khi Email gửi đi trùng với Tài khoản, hoặc là một bí danh @gmail.com đã tạo trong chính tài khoản đó. Nếu không, Gmail sẽ từ chối với lỗi 535-5.7.8.', 'jankx'); ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <form method="post" action="options.php" style="max-width:760px;">
                 <?php settings_fields(self::OPTION_GROUP); ?>
 
@@ -266,7 +284,7 @@ class SettingsPage
                                    value="<?php echo esc_attr($this->config->get(SmtpConfig::USERNAME)); ?>"
                                    class="regular-text"
                                    autocomplete="off">
-                            <p class="description"><?php esc_html_e('Địa chỉ Gmail đầy đủ, ví dụ nobitourvn@gmail.com', 'jankx'); ?></p>
+                            <p class="description"><?php esc_html_e('Gmail cá nhân: tên đăng nhập của bạn, ví dụ nobitour.vn@gmail.com', 'jankx'); ?></p>
                         </td>
                     </tr>
 
@@ -325,7 +343,7 @@ class SettingsPage
                                    value="<?php echo esc_attr($this->config->get(SmtpConfig::FROM_EMAIL)); ?>"
                                    class="regular-text"
                                    placeholder="<?php echo esc_attr($this->config->get(SmtpConfig::USERNAME)); ?>">
-                            <p class="description"><?php esc_html_e('Gmail chỉ cho gửi khi From trùng tài khoản đã xác thực, trừ khi bạn đã cấu hình "Gửi email dưới tên".', 'jankx'); ?></p>
+                            <p class="description"><?php esc_html_e('Gmail cá nhân chỉ cho gửi khi địa chỉ này trùng với Tài khoản (hoặc là bí danh đã tạo trong chính tài khoản đó).', 'jankx'); ?></p>
                         </td>
                     </tr>
 

@@ -90,6 +90,40 @@ class SmtpConfig
     }
 
     /**
+     * Gmail cá nhân chỉ xác thực được bằng địa chỉ @gmail.com.
+     */
+    public function isPersonalGmail(): bool
+    {
+        return $this->emailDomain((string) $this->get(self::USERNAME)) === 'gmail.com';
+    }
+
+    /**
+     * Gmail cá nhân chỉ cho gửi khi From trùng tài khoản đã xác thực
+     * (hoặc là một bí danh @gmail.com của chính tài khoản đó).
+     */
+    public function isFromAuthorized(): bool
+    {
+        $from = $this->getFromEmail();
+
+        if ($from === '') {
+            return true;
+        }
+
+        return strcasecmp($from, (string) $this->get(self::USERNAME)) === 0;
+    }
+
+    public function emailDomain(string $email): string
+    {
+        $position = strrpos($email, '@');
+
+        if ($position === false) {
+            return '';
+        }
+
+        return strtolower(substr($email, $position + 1));
+    }
+
+    /**
      * @return string '' | 'ssl' | 'tls'
      */
     public function resolveEncryption(): string

@@ -37,13 +37,15 @@ Không cần sửa code của các extension khác.
 
 ## 3. Điều kiện trước khi bắt đầu
 
+Tài liệu này viết cho **Gmail cá nhân** (tài khoản `@gmail.com` tự quản lý), không phải Google Workspace.
+
 - [ ] Website đang chạy WordPress và extension `gmail-smtp` đã được bật trong trang quản trị theme.
-- [ ] Bạn có một tài khoản Gmail dùng riêng cho website (khuyến nghị), ví dụ `nobitour.vn@gmail.com`.
-- [ ] Tài khoản Gmail đã bật Xác minh 2 bước.
+- [ ] Bạn có một tài khoản **Gmail cá nhân**, nên tạo riêng một tài khoản cho website, ví dụ `nobitour.vn@gmail.com`.
+- [ ] Tài khoản Gmail cá nhân đã bật Xác minh 2 bước.
 - [ ] Hosting cho phép kết nối ra ngoài qua cổng `587` hoặc `465`. Nếu nhà cung cấp chặn toàn bộ SMTP outbound thì extension này cũng không cứu được — phải đổi hosting hoặc dùng dịch vụ gửi mail chuyên dụng.
 
-> **Lưu ý về tài khoản Google Workspace (Google Apps):** Google chặn App Password trên Workspace do công ty quản lý.
-> Khi đó cần bật **2SV** hoặc dùng OAuth2, hoặc nhờ quản trị viên cho phép App Password.
+> **Không phải Google Workspace?** Tài khoản công ty (`ten@tencongty.com` do Google Workspace quản lý) bị Google chặn App
+> Password và bị giới hạn gửi theo chính sách của tổ chức. Tài liệu này không áp dụng cho trường hợp đó.
 
 ---
 
@@ -82,10 +84,10 @@ Vào **Jankx Dashboard → Gmail SMTP** (URL: `wp-admin/admin.php?page=jankx-gma
 | Port | `587` | Hoặc `465`. Xem bảng bên dưới |
 | Mã hoá | `TLS (STARTTLS)` | Khớp với port 587 |
 | Timeout | `30` | Giây chờ kết nối |
-| Tài khoản | `nobitour.vn@gmail.com` | Địa chỉ Gmail đầy đủ |
+| Tài khoản | `nobitour.vn@gmail.com` | Gmail cá nhân của bạn |
 | Mật khẩu ứng dụng | 16 ký tự vừa tạo | Để trống nếu không muốn đổi mật khẩu đã lưu |
 | Xác thực SMTP | ✅ Tích | Gmail luôn bắt buộc |
-| Email gửi đi | `nobitour.vn@gmail.com` | Nên trùng với tài khoản xác thực |
+| Email gửi đi | `nobitour.vn@gmail.com` | Trùng với tài khoản xác thực (xem mục 8) |
 | Tên hiển thị | `Nobitour` | Không bắt buộc, mặc định lấy tên site |
 | Ghi đè From | ✅ Tích | Bảo đảm mọi email dùng địa chỉ trên |
 | Ghi log SMTP | ❌ Tắt | Chỉ bật khi đang lỗi, xem mục 9 |
@@ -111,13 +113,27 @@ Sau khi điền xong bấm **Lưu cấu hình**.
 
 ## 8. Quy tắc bắt buộc của Gmail về địa chỉ gửi
 
-Gmail chỉ cho phép gửi email khi địa chỉ `From` **trùng với tài khoản đã xác thực**.
+Gmail chỉ cho phép gửi khi địa chỉ `From` **trùng với tài khoản đã xác thực**.
 
-- Muốn gửi từ `support@nibitour.vn`? Phải cấu hình **Gửi email dưới tên (Send mail as)** trong Gmail:
-  <https://mail.google.com/mail/u/0/#settings/sendmail>
-  → thêm địa chỉ, nhận mã xác minh, thêm vào danh sách bí danh, chọn làm mặc định.
-- Nếu không làm bước này, hãy để **Email gửi đi** trùng với **Tài khoản**.
-- Khi bật **Ghi đè From**, extension sẽ ép mọi email dùng địa chỉ đã cấu hình — đúng những gì Gmail yêu cầu.
+Với **Gmail cá nhân**, cách an toàn và chắc chắn nhất là gửi bằng chính địa chỉ `@gmail.com` của bạn:
+
+- Để **Tài khoản** = **Email gửi đi** = `nobitour.vn@gmail.com`.
+- Bật **Ghi đè From** để mọi email của website đều dùng địa chỉ này.
+
+### Muốn gửi từ địa chỉ `@gmail.com` khác?
+
+Nếu bạn có thêm địa chỉ Gmail (ví dụ `contact.nibitour@gmail.com`), thêm nó làm **bí danh (alias)**:
+
+1. Vào <https://mail.google.com/mail/u/0/#settings> → *Xem tất cả cài đặt*.
+2. Mục **Tài khoản và nhập** → *Thêm tài khoản email khác* → *Tạo bí danh email cho người dùng này*.
+3. Gmail hiển thị địa chỉ mới kèm mã `@gmail.com`.
+4. Quay lại trang cài đặt extension, đổi **Tài khoản** và **Email gửi đi** sang địa chỉ vừa tạo.
+
+### Có thể gửi từ `support@nibitour.vn` được không?
+
+Với Gmail cá nhân, gần như **không nên làm**. Gmail chỉ cho bạn thêm địa chỉ mà bạn có thể nhận mã xác minh, và khi gửi bằng địa chỉ ngoài `@gmail.com` thì chữ ký DKIM vẫn thuộc về `gmail.com` — nhiều máy chủ nhận sẽ đánh giá email là giả mạo và cho vào spam hoặc chặn hẳn.
+
+Nếu thương hiệu bắt buộc phải dùng `support@nibitour.vn`, hãy dùng **Google Workspace** cho địa chỉ đó (kèm DNS theo mục 11), hoặc dịch vụ gửi mail chuyên dụng.
 
 ## 9. Ghi log SMTP để chẩn đoán
 
@@ -129,18 +145,26 @@ Bật **Ghi log SMTP** rồi gửi email thử, sau đó mở log lỗi PHP:
 
 Sau khi tìm ra nguyên nhân, **nhớ tắt lại Ghi log SMTP** vì log có thể chứa địa chỉ người nhận.
 
-## 10. Hạn mức và chống spam
+## 10. Hạn mức gửi của Gmail cá nhân
 
-| Loại tài khoản | Hạn mức gửi/ngày |
+| Mức | Giá trị |
 |---|---|
-| Gmail cá nhân | khoảng **500** email |
-| Google Workspace | **2.000** email |
+| Hạn mức chung | khoảng **500 email/ngày** |
+| Số người nhận tối đa mỗi email | **20** (địa chỉ trong To/CC/BCC) |
+| Số email tối đa gửi trong một lần nhập | **100** |
 
-Ngoài hạn mức, Gmail có thể đánh dấu email hàng loạt là spam. Nếu site gửi email marketing hàng nghìn tin mỗi lần, hãy dùng dịch vụ chuyên dụng (Mailchimp, Brevo, Amazon SES...) thay vì Gmail.
+Hạn mức tính cho cả email bạn tự gửi tay lẫn email website gửi qua SMTP. Nếu vượt mức, Gmail sẽ từ chối và báo `550-5.7.1` hoặc `452-4.5.3`.
 
-## 11. Cấu hình DNS để email không rơi vào spam (SPF / DKIM / DMARC)
+Đây là lý do nên **tạo một tài khoản Gmail riêng cho website**: những email bạn gửi cho khách hàng thủ công không làm hao hết hạn mức của site, và ngược lại.
 
-Chỉ cần làm khi bạn gửi email **bằng địa chỉ của tên miền riêng** (ví dụ `support@nibitour.vn`) qua Google Workspace.
+Ngoài hạn mức, Gmail còn đánh giá "uy tín" người gửi. Nếu site gửi hàng loạt email marketing, hãy dùng dịch vụ chuyên dụng (Brevo, Mailchimp, Amazon SES...) thay vì Gmail.
+
+## 11. DNS: SPF / DKIM / DMARC
+
+> **Bạn không cần làm mục này.** Khi dùng Gmail cá nhân và gửi bằng địa chỉ `@gmail.com`, chữ ký DKIM và bản ghi SPF của
+> Google đã có sẵn. Email gửi đi vẫn có dấu hiệu xác thực đầy đủ và rất ít khi rơi vào spam.
+
+Mục này chỉ dành cho trường hợp bạn dùng địa chỉ của tên miền riêng (`support@nibitour.vn`) qua **Google Workspace**.
 
 ### SPF — cho phép Google gửi thay tên miền
 
@@ -162,18 +186,18 @@ v=DMARC1; p=none; rua=mailto:dmarc@nibitour.vn
 
 Sau khi đã đúng, đổi `p=none` thành `p=quarantine` rồi `p=reject`.
 
-> Nếu bạn dùng **tài khoản Gmail cá nhân** và gửi bằng chính địa chỉ `@gmail.com`, bước này không áp dụng — email sẵn sàng có DKIM của Google.
-
 ## 12. Khắc phục sự cố
 
 | Thông báo lỗi | Nguyên nhân | Cách sửa |
 |---|---|---|
 | `Failed to authenticate` / `535-5.7.8 Username and Password not accepted` | Sai App Password hoặc mật khẩu ứng dụng bị thu hồi | Tạo lại App Password, dán đúng 16 ký tự đã bỏ khoảng trắng |
-| `535-5.7.8 ... from address not authorized` | Địa chỉ gửi không trùng tài khoản xác thực | Sửa **Email gửi đi** hoặc cấu hình *Gửi email dưới tên* (mục 8) |
+| `535-5.7.8 ... from address not authorized` | Địa chỉ gửi không trùng tài khoản xác thực | Sửa **Email gửi đi** cho trùng với **Tài khoản** (mục 8) |
+| `550-5.7.1` hoặc `452-4.5.3` | Vượt hạn mức gửi của Gmail | Giảm số email/ngày, hoặc chuyển sang dịch vụ chuyên dụng (mục 10) |
+| Không tạo được App Password ở trang Google | Đang dùng tài khoản Google Workspace, không phải Gmail cá nhân | Dùng đúng tài khoản `@gmail.com` (xem mục 3) |
 | `Connection timed out` / `Failed to connect to smtp.gmail.com port 587` | Hosting chặn cổng 587 | Đổi port `465` + mã hoá `SSL/TLS ngầm định` |
 | `SSL operation failed` / `wrong version number` | Đang dùng SSL ngầm định ở port 587 | Đặt port `587` + mã hoá `TLS (STARTTLS)`, hoặc ngược lại |
 | `Access denied. Please visit https://support.google.com/accounts/answer/6010255` | Tài khoản không bật xác minh 2 bước hoặc bị Google chặn SMTP | Bật 2SV, kiểm tra thêm: `https://accounts.google.com/b/0/DisplaySMTPStatus` |
-| Email vào Spam | Chưa có SPF/DKIM/DMARC, hoặc gửi quá nhiều trong thời gian ngắn | Làm mục 11, giảm tần suất gửi |
+| Email vào Spam | Gửi quá nhiều trong thời gian ngắn, hoặc nội dung/liên kết bị nghi ngờ | Giảm tần suất gửi, bỏ link không cần thiết |
 | `wp_mail()` trả về `false` nhưng không có thông báo | Bị chặn bởi plugin khác hoặc hosting | Tắt tạm các plugin gửi mail khác, xem error log |
 | Không có lỗi nhưng email không tới | Hosting chặn hoàn toàn SMTP outbound | Liên hệ nhà cung cầp hosting mở cổng 587/465 |
 
